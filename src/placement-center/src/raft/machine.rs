@@ -79,9 +79,11 @@ impl RaftMachine {
 
     pub async fn run(&mut self) {
         let mut raft_node: RawNode<RaftRocksDBStorage> = self.new_node().await;
+        //定义每隔100ms向前驱动一次状态机
         let heartbeat = Duration::from_millis(100);
         let mut now = Instant::now();
         loop {
+            //状态机停止信号
             match self.stop_recv.try_recv() {
                 Ok(val) => {
                     if val {
@@ -107,10 +109,10 @@ impl RaftMachine {
                         }
                     }
                 }
-
+                //接收其他raft node上状态机发送的消息
                 Ok(Some(RaftMessage::Raft { message, chan })) => {
                     // Step advances the state machine using the given message.
-
+                
                     match raft_node.step(message) {
                         // After the step message succeeds, you can return success directly
                         Ok(_) => match chan.send(RaftResponseMesage::Success) {
@@ -136,7 +138,7 @@ impl RaftMachine {
                         }
                     }
                 }
-
+                //接收写入到raft状态机的用户消息
                 Ok(Some(RaftMessage::Propose { data, chan })) => {
                     // Propose proposes data be appended to the raft log.
                     let seq = self
@@ -325,6 +327,7 @@ impl RaftMachine {
         }
     }
 
+    ///初始化raw node实例：构建配置和创建RawNode
     pub async fn new_node(&self) -> RawNode<RaftRocksDBStorage> {
         let cluster = self.placement_cluster.read().unwrap();
         let storage = RaftRocksDBStorage::new(self.raft_storage.clone());
@@ -333,7 +336,8 @@ impl RaftMachine {
         let hs = storage.read_lock().hard_state();
         let conf = self.build_config(hs.commit);
 
-        // init voters && learns
+        // init voters && learns 
+        //节点发现，初始化raft的投票者列表
         let mut cs = storage.read_lock().conf_state();
         cs.voters = cluster.node_ids();
         let _ = storage.write_lock().save_conf_state(cs);

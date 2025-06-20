@@ -27,11 +27,12 @@ use clients::{
     poll::ClientPool,
 };
 use common_base::errors::RobustMQError;
+use dashmap::DashMap;
 use openraft::Raft;
 use prost::Message;
 use protocol::kv::{
-    kv_service_server::KvService, CommonReply, DeleteRequest, ExistsReply, ExistsRequest, GetReply,
-    GetRequest, SetRequest,
+    CommonReply, DeleteRequest, ExistsReply, ExistsRequest, GetReply, GetRequest, SetRequest,
+    kv_service_server::KvService,
 };
 use tonic::{Request, Response, Status};
 
@@ -40,6 +41,57 @@ pub struct GrpcKvServices {
     placement_center_storage: Arc<RaftMachineApply>,
     rocksdb_engine_handler: Arc<RocksDBEngine>,
     placement_cluster: Arc<RwLock<RaftGroupMetadata>>,
+}
+
+pub struct GrpcKvServicesTest {
+    // 初始化⼀个基于 DashMap 库的 HashMap
+    data: DashMap<String, String>,
+}
+
+impl GrpcKvServicesTest {
+    pub fn new() -> Self {
+        GrpcKvServicesTest {
+            data: DashMap::with_capacity(5),
+        }
+    }
+}
+
+#[tonic::async_trait]
+impl KvService for GrpcKvServicesTest {
+    async fn set(&self, request: Request<SetRequest>) -> Result<Response<CommonReply>, Status> {
+        let req = request.into_inner();
+        self.data.insert(req.key, req.value);
+        Ok(Response::new(CommonReply::default()))
+    }
+
+    async fn get(&self, request: Request<GetRequest>) -> Result<Response<GetReply>, Status> {
+        let req = request.into_inner();
+        if let Some(v) = self.data.get(&req.key) {
+            return Ok(Response::new(GetReply {
+                value: v.to_string(),
+            }));
+        }
+        Ok(Response::new(GetReply::default()))
+    }
+
+    async fn delete(
+        &self,
+        request: Request<DeleteRequest>,
+    ) -> Result<Response<CommonReply>, Status> {
+        let req = request.into_inner();
+        self.data.remove(&req.key);
+        return Ok(Response::new(CommonReply::default()));
+    }
+
+    async fn exists(
+        &self,
+        request: Request<ExistsRequest>,
+    ) -> Result<Response<ExistsReply>, Status> {
+        let req = request.into_inner();
+        Ok(Response::new(ExistsReply {
+            flag: self.data.contains_key(&req.key),
+        }))
+    }
 }
 
 impl GrpcKvServices {
