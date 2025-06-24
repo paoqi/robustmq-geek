@@ -17,3 +17,5 @@ mod services_kv;
 mod services_openraft;
 mod services_raft;
 mod services_kv_new;
+pub mod services_kv_dashmap_test;
+pub mod services_kv_rocksdb_test;

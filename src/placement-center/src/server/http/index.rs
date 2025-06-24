@@ -28,7 +28,6 @@
  * limitations under the License.
  */
 use super::server::HttpServerState;
-use super::server::HttpServerStateTest;
 use axum::extract::State;
 use common_base::http_response::success_response;
 pub async fn index(State(_): State<HttpServerState>) -> String {
@@ -36,8 +35,5 @@ pub async fn index(State(_): State<HttpServerState>) -> String {
     return success_response("{}");
 }
 
-pub async fn index_test() -> String {
-    // println!("name:{}",state.name);
-    return success_response("hello,world");
-}
+
 

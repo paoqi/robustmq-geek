@@ -15,6 +15,7 @@
 pub mod index;
 pub mod openraft;
 pub mod server;
+pub mod server_test;
 
 pub(crate) fn v1_path(path: &str) -> String {
     return format!("/v1{}", path);

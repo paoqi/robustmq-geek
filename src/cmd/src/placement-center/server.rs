@@ -44,8 +44,12 @@ async fn main() {
 
     let (stop_send, _) = broadcast::channel(2);
     // start_server(stop_send).await;
-    //测试http server
-    // placement_center::server::http::server::start_http_server_test(stop_send.clone()).await;
 
-    placement_center::server::grpc::server::start_grpc_server_test(stop_send).await;
+    //测试http server
+    // placement_center::server::http::server_test::start_http_server_test(stop_send.clone()).await;
+
+    //dashmap版本kv grpc服务端
+    // placement_center::server::grpc::services_kv_dashmap_test::start_grpc_server_test(stop_send).await;
+    //rocksdb版本kv grpc服务端
+    placement_center::server::grpc::services_kv_rocksdb_test::start_grpc_server_test(stop_send).await;
 }

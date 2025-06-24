@@ -16,7 +16,7 @@ use crate::{
     openraft::typeconfig::TypeConfig,
     raft::{apply::RaftMachineApply, metadata::RaftGroupMetadata},
     server::grpc::{
-        services_kv::{GrpcKvServices, GrpcKvServicesTest}, services_openraft::GrpcOpenRaftServices,
+        services_kv::{GrpcKvServices}, services_openraft::GrpcOpenRaftServices,
         services_raft::GrpcRaftServices,
     },
     storage::rocksdb::RocksDBEngine,
@@ -57,11 +57,7 @@ pub async fn start_grpc_server(
         .await;
 }
 
-pub async fn start_grpc_server_test(stop_sx: broadcast::Sender<bool>) {
-    let config = placement_center_conf();
-    let server = GrpcServer::new(config.grpc_port);
-    server.start_test( stop_sx).await;
-}
+
 
 pub struct GrpcServer {
     port: usize,
@@ -70,39 +66,6 @@ pub struct GrpcServer {
 impl GrpcServer {
     pub fn new(port: usize) -> Self {
         return Self { port };
-    }
-
-    pub async fn start_test(&self,stop_sx: broadcast::Sender<bool>){
-        let addr = format!("0.0.0.0:{}", self.port).parse().unwrap();
-        info!("Broker Grpc Server start. port:{}", self.port);
-
-        let kv_service_handler_test = GrpcKvServicesTest::new();
-        let mut stop_rx = stop_sx.subscribe();
-        select! {
-
-            val = stop_rx.recv() =>{
-                match val{
-                    Ok(flag) => {
-                        if flag {
-                            info!("GRPC Server stopped successfully");
-
-                        }
-                    }
-                    Err(_) => {}
-                }
-            },
-
-            val =  Server::builder().add_service(KvServiceServer::new(kv_service_handler_test))
-                                    .serve(addr)=>{
-                match val{
-                    Ok(()) => {
-                    },
-                    Err(e) => {
-                        panic!("{}",e);
-                    }
-                }
-            }
-        }
     }
     pub async fn start(
         &self,

@@ -1,10 +1,20 @@
 
+use super::path_list;
+use super::{index::index, v1_path};
+use axum::routing::{get, post};
+use axum::Router;
+use common_base::config::placement_center::placement_center_conf;
+use log::info;
+use std::net::SocketAddr;
+use tokio::{select, sync::broadcast};
+use common_base::http_response::success_response;
+
+pub const ROUTE_ROOT: &str = "/index";
 
 #[derive(Clone)]
 pub struct HttpServerStateTest {
     pub name:String,
 }
-
 
 
 pub async fn start_http_server_test(stop_sx: broadcast::Sender<bool>) {
