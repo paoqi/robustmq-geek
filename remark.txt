@@ -1,0 +1,9 @@
+raft模块
+
+存储层：src\placement-center\src\storage\raft.rs 中的RaftMachineStorage  ，底层采用rocksdb
+
+状态机实例：src\placement-center\src\raft\storage.rs 中的RaftRocksDBStorage，实现了raft的  Storage trait，通过控制RaftMachineStorage来操作数据
+
+
+
+
