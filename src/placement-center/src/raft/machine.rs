@@ -181,6 +181,7 @@ impl RaftMachine {
     }
 
     async fn on_ready(&mut self, raft_node: &mut RawNode<RaftRocksDBStorage>) {
+        //检查状态机是否已就绪
         if !raft_node.has_ready() {
             return;
         }
@@ -189,6 +190,7 @@ impl RaftMachine {
         // After receiving the data sent by the client,
         // the data needs to be sent to other Raft nodes for persistent storage.
         if !ready.messages().is_empty() {
+            //将raft 消息发送给其他node
             self.send_message(ready.take_messages()).await;
         }
 
@@ -207,12 +209,16 @@ impl RaftMachine {
         }
 
         // messages need to be stored to Storage before they can be sent.Save entries to Storage.
+        //持久化raft日志
         if !ready.entries().is_empty() {
             let entries = ready.entries();
             raft_node.mut_store().append(entries).unwrap();
         }
 
         // The committed raft log can be applied to the State Machine.
+        // 处理已经能够被 Apply 的消息
+        // 因为 Raft 存储是两阶段的，Leader 接收到数据后，需要被多个节点都处理成功后才能算处理成功
+        // 所以 这⼀步是 apply 已经被多个节点处理成功的数据
         self.handle_committed_entries(raft_node, ready.take_committed_entries());
 
         // If there is a change in HardState, such as a revote,
@@ -224,11 +230,14 @@ impl RaftMachine {
 
         // Persisted Messages specifies outbound messages to be sent AFTER the HardState,
         // Entries and Snapshot are persisted to stable storage.
+        // 判断是否有persisted messages 消息
+        // 有的话就发送给其他 Raft 节点
         if !ready.persisted_messages().is_empty() {
             self.send_message(ready.take_persisted_messages()).await;
         }
 
         // A call to advance tells Raft that it is ready for processing.
+        //在确保⼀个 Ready 中的所有进度被正确处理完成之后，调⽤ RawNode::advance 接⼝。
         let mut light_rd = raft_node.advance(ready);
         if let Some(commit) = light_rd.commit_index() {
             info!("save light rd!!!,commit:{:?}", commit);
@@ -252,6 +261,7 @@ impl RaftMachine {
             if !entry.data.is_empty() {
                 info!("ready entrys entry type:{:?}", entry.get_entry_type());
                 match entry.get_entry_type() {
+                    //EntryNormal 表⽰客⼾端业务消息
                     EntryType::EntryNormal => {
                         // Saves the service data sent by the client
                         match data_route.route(entry.get_data().to_vec()) {
@@ -261,6 +271,7 @@ impl RaftMachine {
                             }
                         }
                     }
+                    //EntryConfChange 表⽰ Raft 集群内的消息，⽐如节点的上线下线
                     EntryType::EntryConfChange => {
                         let change = ConfChange::decode(entry.get_data())
                             .map_err(|e| tonic::Status::invalid_argument(e.to_string()))

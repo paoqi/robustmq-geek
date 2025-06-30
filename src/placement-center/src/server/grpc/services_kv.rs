@@ -93,6 +93,7 @@ impl KvService for GrpcKvServices {
 
         // Raft state machine is used to store Node data
         let data = StorageData::new(StorageDataType::KvSet, SetRequest::encode_to_vec(&req));
+        //把数据交给rust 状态机
         match self
             .placement_center_storage
             .apply_propose_message(data, "set".to_string())

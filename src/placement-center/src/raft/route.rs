@@ -37,12 +37,12 @@ impl DataRoute {
         match storage_data.data_type {
             StorageDataType::KvSet => {
                 let kv_storage = KvStorage::new(self.rocksdb_engine_handler.clone());
-                let req: SetRequest = SetRequest::decode(data.as_ref()).unwrap();
+                let req: SetRequest = SetRequest::decode(storage_data.value.as_ref()).unwrap();
                 return kv_storage.set(req.key, req.value);
             }
             StorageDataType::KvDelete => {
                 let kv_storage = KvStorage::new(self.rocksdb_engine_handler.clone());
-                let req: DeleteRequest = DeleteRequest::decode(data.as_ref()).unwrap();
+                let req: DeleteRequest = DeleteRequest::decode(storage_data.value.as_ref()).unwrap();
                 return kv_storage.delete(req.key);
             }
         }

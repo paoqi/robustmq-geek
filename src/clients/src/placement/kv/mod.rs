@@ -82,6 +82,9 @@ impl KvServiceManager {
 
 #[tonic::async_trait]
 impl Manager for KvServiceManager {
+    // 使⽤ Rust 类型别名的语法，将类型 KvServiceClient<Channel> 重命名为Connection
+    // 使⽤别名的好处是，你可以⾃定义connect⽅法的返回值，因为connect的返回值是 Self::Connection
+    // 在这⾥我们将KvServiceClient<Channel>重命名为Connection，因此connect⽅法的返回值就Self::Connection
     type Connection = KvServiceClient<Channel>;
     type Error = RobustMQError;
 

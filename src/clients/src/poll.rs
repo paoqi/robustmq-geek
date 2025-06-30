@@ -19,8 +19,10 @@ use mobc::{Connection, Pool};
 
 #[derive(Clone)]
 pub struct ClientPool {
+    //最大连接数
     max_open_connection: u64,
     // placement center
+    //使⽤ DashMap 来存储每个服务端IP 和GRPC Service对应的连接池
     placement_center_kv_service_pools: DashMap<String, Pool<KvServiceManager>>,
     placement_center_openraft_service_pools: DashMap<String, Pool<OpenRaftServiceManager>>,
 }

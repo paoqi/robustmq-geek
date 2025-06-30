@@ -19,7 +19,7 @@ package placement;
 import "common.proto";
 
 service PlacementCenterService {
-
+  //用于两个raft节点间的通讯
   rpc SendRaftMessage(SendRaftMessageRequest) returns(SendRaftMessageReply) {}
 
   rpc SendRaftConfChange(SendRaftConfChangeRequest) returns(SendRaftConfChangeReply){}
